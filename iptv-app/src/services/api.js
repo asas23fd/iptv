@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://tv5play.xyz';
+const BASE_URL = 'https://tv5play.xyz';
 const USERNAME = 'Gabriel2840';
 const PASSWORD = '253ADMqwn';
 
