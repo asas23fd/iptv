@@ -59,12 +59,11 @@ const Player = () => {
     const isHls = url?.includes('.m3u8');
 
     if (isHls && Hls.isSupported()) {
-      // Custom loader that proxies HTTP streams through HTTPS CORS proxy
+      // Proxy ALL requests to avoid mixed content (server redirects HTTP->HTTPS)
       const CORS_PROXY = 'https://corsproxy.io/?';
       const proxyUrl = (u) => {
         if (!u) return u;
-        if (u.startsWith('http://')) return CORS_PROXY + encodeURIComponent(u);
-        return u;
+        return CORS_PROXY + encodeURIComponent(u);
       };
 
       class ProxyLoader extends Hls.DefaultConfig.loader {
@@ -85,7 +84,7 @@ const Player = () => {
         loader: ProxyLoader,
       });
       hlsRef.current = hls;
-      hls.loadSource(url);
+      hls.loadSource(proxyUrl(url));
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
       hls.on(Hls.Events.ERROR, (_, data) => {
@@ -179,15 +178,22 @@ const Player = () => {
 
   const handleRetry = useCallback(() => {
     setError(null); setBuffering(true);
-    const video = videoRef.current, url = currentStream?.url;
-    if (!video || !url) return;
+    const video = videoRef.current, streamUrl = currentStream?.url;
+    if (!video || !streamUrl) return;
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-    if (url.includes('.m3u8') && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+    if (streamUrl.includes('.m3u8') && Hls.isSupported()) {
+      const CORS_PROXY = 'https://corsproxy.io/?';
+      const proxied = CORS_PROXY + encodeURIComponent(streamUrl);
+      const hls = new Hls({
+        enableWorker: true, lowLatencyMode: true,
+        loader: class extends Hls.DefaultConfig.loader {
+          constructor(cfg) { super(cfg); const o = this.load.bind(this); this.load = (c, cfg2, cb) => { c.url = CORS_PROXY + encodeURIComponent(c.url); o(c, cfg2, cb); }; }
+        },
+      });
       hlsRef.current = hls;
-      hls.loadSource(url); hls.attachMedia(video);
+      hls.loadSource(proxied); hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-    } else { video.src = url; video.load(); }
+    } else { video.src = streamUrl; video.load(); }
   }, [currentStream]);
 
   const toggleFs = useCallback(() => {
