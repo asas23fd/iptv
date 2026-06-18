@@ -59,17 +59,25 @@ const Player = () => {
     const isHls = url?.includes('.m3u8');
 
     if (isHls && Hls.isSupported()) {
+      // Custom loader that proxies HTTP requests through HTTPS
+      class HttpsLoader extends Hls.DefaultConfig.loader {
+        constructor(config) {
+          super(config);
+          const origLoad = this.load.bind(this);
+          this.load = function(context, config, callbacks) {
+            if (context.url && context.url.startsWith('http://')) {
+              context.url = context.url.replace(/^http:\/\//i, 'https://');
+            }
+            origLoad(context, config, callbacks);
+          };
+        }
+      }
+
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         backBufferLength: 90,
-        xhrSetup: (xhr, reqUrl) => {
-          // Force HTTPS on all HLS requests
-          if (reqUrl.startsWith('http://')) {
-            const httpsUrl = reqUrl.replace(/^http:\/\//i, 'https://');
-            xhr.open('GET', httpsUrl, true);
-          }
-        },
+        loader: HttpsLoader,
       });
       hlsRef.current = hls;
       hls.loadSource(url);
