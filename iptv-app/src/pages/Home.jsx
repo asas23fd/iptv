@@ -102,7 +102,11 @@ const Home = () => {
   useEffect(() => {
     Promise.all([getLiveStreams(), getLiveCategories()])
       .then(([live, cats]) => {
-        setChannels(live.map(ch => ({ ...ch, streamUrl: getStreamUrl(ch.stream_id) })));
+        setChannels(live.map(ch => ({
+          ...ch,
+          streamUrl: getStreamUrl(ch.stream_id),
+          stream_icon: ch.stream_icon ? ch.stream_icon.replace(/^http:\/\//i, 'https://') : ch.stream_icon,
+        })));
         setCategories(cats);
         if (cats.length > 0) setActiveCategory(cats[0].category_id);
       })

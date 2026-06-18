@@ -59,7 +59,18 @@ const Player = () => {
     const isHls = url?.includes('.m3u8');
 
     if (isHls && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 90 });
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 90,
+        xhrSetup: (xhr, reqUrl) => {
+          // Force HTTPS on all HLS requests
+          if (reqUrl.startsWith('http://')) {
+            const httpsUrl = reqUrl.replace(/^http:\/\//i, 'https://');
+            xhr.open('GET', httpsUrl, true);
+          }
+        },
+      });
       hlsRef.current = hls;
       hls.loadSource(url);
       hls.attachMedia(video);

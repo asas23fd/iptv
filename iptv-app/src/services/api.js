@@ -4,6 +4,12 @@ const BASE_URL = 'https://tv5play.xyz';
 const USERNAME = 'Gabriel2840';
 const PASSWORD = '253ADMqwn';
 
+// Force HTTPS on any URL
+const forceHttps = (url) => {
+  if (!url) return url;
+  return url.replace(/^http:\/\//i, 'https://');
+};
+
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
@@ -85,15 +91,15 @@ export const getSeriesInfo = async (seriesId) => {
 };
 
 export const getStreamUrl = (streamId, extension = 'm3u8') => {
-  return `${BASE_URL}/live/${USERNAME}/${PASSWORD}/${streamId}.${extension}`;
+  return forceHttps(`${BASE_URL}/live/${USERNAME}/${PASSWORD}/${streamId}.${extension}`);
 };
 
 export const getMovieUrl = (streamId, extension = 'mp4') => {
-  return `${BASE_URL}/movie/${USERNAME}/${PASSWORD}/${streamId}.${extension}`;
+  return forceHttps(`${BASE_URL}/movie/${USERNAME}/${PASSWORD}/${streamId}.${extension}`);
 };
 
 export const getSeriesUrl = (streamId, extension = 'mp4') => {
-  return `${BASE_URL}/series/${USERNAME}/${PASSWORD}/${streamId}.${extension}`;
+  return forceHttps(`${BASE_URL}/series/${USERNAME}/${PASSWORD}/${streamId}.${extension}`);
 };
 
 export const getEpg = async (streamId) => {
